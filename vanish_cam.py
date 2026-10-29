@@ -41,7 +41,7 @@ try:
     )
     from .vanish_sound import SOUND_PATH, VanishSound
     from .goku_effect import (
-        GOKU_DEFAULTS, GokuPhase, GokuState,
+        GOKU_DEFAULTS, HOLD_DROPOUT_GRACE_S, GokuPhase, GokuState,
         advance_phase as goku_advance_phase,
         apply_warp as goku_apply_warp,
         apply_warp_mask as goku_apply_warp_mask,
@@ -58,7 +58,7 @@ except ImportError:
     )
     from vanish_sound import SOUND_PATH, VanishSound
     from goku_effect import (
-        GOKU_DEFAULTS, GokuPhase, GokuState,
+        GOKU_DEFAULTS, HOLD_DROPOUT_GRACE_S, GokuPhase, GokuState,
         advance_phase as goku_advance_phase,
         apply_warp as goku_apply_warp,
         apply_warp_mask as goku_apply_warp_mask,
@@ -821,8 +821,9 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
     started = time.perf_counter()
     print("[Webcam] Step out of frame for 4 seconds: capturing the background.")
     if mode == "goku":
-        print("[Webcam] Window controls: SPACE new background, F fullscreen, Q quit. "
-              "Trigger with index + middle fingers on the forehead for 1 second.")
+        print("[Webcam] Window controls: SPACE new background, V vanish/reappear, "
+              "R reset to idle, F fullscreen, Q quit. "
+              "Gesture: index + middle fingers on the forehead for 1 second.")
     else:
         print("[Webcam] Window controls: SPACE new background, R reappear, V vanish, F fullscreen, Q quit.")
 
@@ -911,6 +912,7 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                 )
                 if can_trigger:
                     if gesture_ok:
+                        goku_state.hold_lost_at = float("-inf")
                         if not goku_state.holding:
                             goku_state.holding = True
                             goku_state.hold_start = now
@@ -923,10 +925,18 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                                 else GokuPhase.CHARGE
                             )
                             goku_enter_phase(goku_state, next_phase, now, goku_cfg)
-                    else:
-                        goku_state.holding = False
+                    elif goku_state.holding:
+                        # Give the hold a grace period: brief detection dropouts
+                        # (hand briefly occluded, finger alignment check flickers)
+                        # should not reset the one-second counter.
+                        if goku_state.hold_lost_at == float("-inf"):
+                            goku_state.hold_lost_at = now
+                        elif now - goku_state.hold_lost_at > HOLD_DROPOUT_GRACE_S:
+                            goku_state.holding = False
+                            goku_state.hold_lost_at = float("-inf")
                 else:
                     goku_state.holding = False
+                    goku_state.hold_lost_at = float("-inf")
 
                 goku_advance_phase(goku_state, now, goku_cfg)
                 env = sample_envelopes(goku_state, now, goku_cfg)
@@ -1068,21 +1078,36 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                     goku_enter_phase(goku_state, GokuPhase.IDLE, now, goku_cfg)
                     goku_last_frame_time = None
                 print("[Webcam] Step out of frame for 4 seconds: capturing the new background.")
-            elif key == ord("r") and mode != "goku":
-                if background is not None:
+            elif key == ord("r"):
+                if mode == "goku" and goku_state is not None:
+                    goku_enter_phase(goku_state, GokuPhase.IDLE, now, goku_cfg)
+                    goku_state.holding = False
+                    goku_state.hold_lost_at = float("-inf")
+                elif background is not None:
                     state.phase = "ready"
                     state.vanish_started = None
                     vanished_frame = None
                     log_anchor = None
                     last_mask = None
                     last_mask_at = float("-inf")
-            elif key == ord("v") and background is not None and mode != "goku":
-                state.phase = "naruto_vanishing" if mode == "naruto" else "vanishing"
-                state.vanish_started = time.perf_counter()
-                if mode == "naruto":
-                    vanish_sound.play()
-                    log_anchor = None
-                vanished_frame = None
+            elif key == ord("v") and background is not None:
+                if mode == "goku" and goku_state is not None:
+                    next_phase = (
+                        GokuPhase.R_LINGER
+                        if goku_state.phase == GokuPhase.GONE
+                        else GokuPhase.CHARGE
+                    )
+                    if goku_state.phase in (GokuPhase.IDLE, GokuPhase.GONE):
+                        goku_enter_phase(goku_state, next_phase, now, goku_cfg)
+                        goku_state.holding = False
+                        goku_state.hold_lost_at = float("-inf")
+                else:
+                    state.phase = "naruto_vanishing" if mode == "naruto" else "vanishing"
+                    state.vanish_started = time.perf_counter()
+                    if mode == "naruto":
+                        vanish_sound.play()
+                        log_anchor = None
+                    vanished_frame = None
             elif key == ord("f"):
                 state.fullscreen = not state.fullscreen
                 set_fullscreen(state.fullscreen)

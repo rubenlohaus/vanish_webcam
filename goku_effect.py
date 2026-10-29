@@ -43,12 +43,16 @@ class GokuPhase(enum.IntEnum):
     R_CHARGE = 9
 
 
+HOLD_DROPOUT_GRACE_S = 0.4  # Keep the hold alive this long after the gesture flickers off.
+
+
 @dataclasses.dataclass
 class GokuState:
     phase: GokuPhase = GokuPhase.IDLE
     phase_start: float = 0.0
     holding: bool = False
     hold_start: float = 0.0
+    hold_lost_at: float = -math.inf
     scroll: float = 0.0
     seed_lines: list = dataclasses.field(default_factory=list)
     forehead_xy: tuple[int, int] | None = None
@@ -383,9 +387,9 @@ def detect_goku_gesture(face_result, hand_result, img_wh: tuple[int, int]) -> bo
                    (index_tip[1] + middle_tip[1]) * 0.5)
         if _dist(avg_tip, forehead) > face_width * 0.35:
             continue
-        if not _finger_extended(pts, 5, 6, 7, 8, face_width * 0.4):
+        if not _finger_extended(pts, 5, 6, 7, 8, face_width * 0.3):
             continue
-        if not _finger_extended(pts, 9, 10, 11, 12, face_width * 0.4):
+        if not _finger_extended(pts, 9, 10, 11, 12, face_width * 0.3):
             continue
         # Ring and pinky should NOT be as extended as index (loose check).
         ring_reach = _dist(pts[13], pts[16])
