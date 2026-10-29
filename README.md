@@ -6,6 +6,8 @@ For step-by-step instructions in English and Italian, see the [user guide](USER_
 
 **macOS users** (Intel and Apple Silicon): see [README_MAC.md](README_MAC.md) for the native setup, launcher scripts, and `.app` build.
 
+**Linux users** (x86_64 and aarch64): see [README_LINUX.md](README_LINUX.md) for the system packages, the `v4l2loopback` virtual-camera setup and the PyInstaller build.
+
 ## What this fork adds over [Nicovic17/vanish_webcam](https://github.com/Nicovic17/vanish_webcam)
 
 - **Goku Instant Transmission mode.** Third vanish mode triggered by holding
