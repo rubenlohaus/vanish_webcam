@@ -3,4 +3,4 @@
 # v4l2loopback on Linux). Exits with an error if no backend is available.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "$SCRIPT_DIR/AVVIA_LOCALE.sh" --virtual-camera "$@"
+exec "$SCRIPT_DIR/START_LOCAL.sh" --virtual-camera "$@"

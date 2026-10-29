@@ -19,7 +19,7 @@ brew install --cask obs            # ships OBS Virtual Camera
 #    Tools → Start Virtual Camera (then stop it; VanishCam will drive it instead)
 
 # 4. Run
-./AVVIA_LOCALE.sh
+./START_LOCAL.sh
 ```
 
 The first run creates a `.venv-local/` and installs the Python dependencies
@@ -29,20 +29,20 @@ The first run creates a `.venv-local/` and installs the Python dependencies
 
 | Script | Purpose |
 |---|---|
-| `AVVIA_LOCALE.sh` | Default. Opens preview and auto-attaches to OBS Virtual Camera if available. |
-| `AVVIA_VIRTUAL.sh` | Fails if no virtual camera backend is available. Use for Zoom/Teams/Meet routing. |
-| `AVVIA_OBS.sh` | Disables virtual output; use with OBS Window Capture of "Webcam - Anteprima". |
+| `START_LOCAL.sh` | Default. Opens preview and auto-attaches to OBS Virtual Camera if available. |
+| `START_VIRTUAL.sh` | Fails if no virtual camera backend is available. Use for Zoom/Teams/Meet routing. |
+| `START_OBS.sh` | Disables virtual output; use with OBS Window Capture of "Webcam - Preview". |
 
 Both scripts accept all the Python flags, e.g.:
 
 ```bash
-./AVVIA_LOCALE.sh --mode naruto --camera 1 --width 1280 --height 720 --fps 30
-./AVVIA_LOCALE.sh --gesture-debug
+./START_LOCAL.sh --mode naruto --camera 1 --width 1280 --height 720 --fps 30
+./START_LOCAL.sh --gesture-debug
 ```
 
 ## Using the virtual camera from Zoom / Teams / Meet
 
-1. Start VanishCam with `./AVVIA_VIRTUAL.sh`.
+1. Start VanishCam with `./START_VIRTUAL.sh`.
 2. In the client app, pick **OBS Virtual Camera** as the webcam.
 3. If the app does not show the virtual camera:
    - **Zoom** (macOS): Preferences → Zoom → tick *Allow use of plug-ins by third-party conference services*. Zoom ≥ 5.9 handles OBS Virtual Camera without hacks.
@@ -93,7 +93,7 @@ The build script picks `.icns` automatically if present.
   Virtual Camera* once, close OBS, retry.
 - **mediapipe install fails on Python 3.13**: downgrade to Python 3.11 or 3.12.
   mediapipe wheels do not cover 3.13 yet on macOS at the time of writing.
-  `brew install python@3.12 && rm -rf .venv-local && ./AVVIA_LOCALE.sh`.
+  `brew install python@3.12 && rm -rf .venv-local && ./START_LOCAL.sh`.
 - **Rosetta on Apple Silicon**: not needed. All dependencies have native arm64
   wheels. If you accidentally created the venv under Rosetta, delete `.venv-local`
   and relaunch so a native venv is created.
