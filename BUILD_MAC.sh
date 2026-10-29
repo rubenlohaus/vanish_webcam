@@ -14,19 +14,19 @@ if [[ ! -x "$VENV_PY" ]]; then
   for candidate in python3.12 python3.11 python3.10 python3; do
     if command -v "$candidate" >/dev/null 2>&1; then SYS_PY="$candidate"; break; fi
   done
-  [[ -z "${SYS_PY:-}" ]] && { echo "Python 3 non trovato (prova: brew install python@3.12)"; exit 1; }
-  echo "[build] Creo venv con $SYS_PY..."
+  [[ -z "${SYS_PY:-}" ]] && { echo "Python 3 not found (try: brew install python@3.12)"; exit 1; }
+  echo "[build] Creating venv with $SYS_PY..."
   "$SYS_PY" -m venv "$VENV_DIR"
 fi
 
 if ! "$VENV_PY" -c "import PyInstaller, cv2, mediapipe, numpy, pyvirtualcam, pygame" >/dev/null 2>&1; then
-  echo "[build] Installo le dipendenze di build..."
+  echo "[build] Installing build dependencies..."
   "$VENV_PY" -m pip install --upgrade pip
   "$VENV_PY" -m pip install -r requirements.txt "pyinstaller>=6,<7"
 fi
 
 if [[ ! -f "models/gesture_recognizer.task" || ! -f "models/selfie_segmenter_landscape.tflite" ]]; then
-  echo "[build] Scarico i modelli MediaPipe..."
+  echo "[build] Downloading MediaPipe models..."
   "$VENV_PY" -c "from vanish_cam import download_models; download_models()"
 fi
 
@@ -34,12 +34,12 @@ echo "[build] PyInstaller target_arch=$ARCH"
 "$VENV_PY" -m PyInstaller --noconfirm --distpath dist --workpath build VanishCam_mac.spec
 
 APP="dist/VanishCam.app"
-[[ -d "$APP" ]] || { echo "[build] .app non generata"; exit 1; }
+[[ -d "$APP" ]] || { echo "[build] .app was not generated"; exit 1; }
 
 echo "[build] Self-test..."
 "$APP/Contents/MacOS/VanishCam" --self-test
 
 echo
-echo "Pronto: $APP  (arch: $ARCH)"
-echo "Per correrla:  open $APP"
-echo "Per log/output: $APP/Contents/MacOS/VanishCam"
+echo "Ready: $APP  (arch: $ARCH)"
+echo "To run:        open $APP"
+echo "For log/output: $APP/Contents/MacOS/VanishCam"

@@ -21,20 +21,20 @@ pick_python() {
 
 if [[ ! -x "$VENV_PY" ]]; then
   SYS_PY="$(pick_python)" || {
-    echo "[VanishCam] Python 3 non trovato. Installa Python 3.11 o 3.12."
+    echo "[VanishCam] Python 3 not found. Install Python 3.11 or 3.12."
     echo "            macOS:  brew install python@3.12"
-    echo "            oppure: https://www.python.org/downloads/macos/"
+    echo "            or:     https://www.python.org/downloads/macos/"
     exit 1
   }
-  echo "[VanishCam] Creo l'ambiente Python locale con $SYS_PY..."
+  echo "[VanishCam] Creating local Python environment with $SYS_PY..."
   "$SYS_PY" -m venv "$VENV_DIR"
 fi
 
 if ! "$VENV_PY" -c "import cv2, mediapipe, numpy, pyvirtualcam, pygame" >/dev/null 2>&1; then
-  echo "[VanishCam] Installo le dipendenze (serve internet solo la prima volta)..."
+  echo "[VanishCam] Installing dependencies (internet needed only the first time)..."
   "$VENV_PY" -m pip install --upgrade pip
   "$VENV_PY" -m pip install -r requirements.txt
 fi
 
-echo "[VanishCam] Avvio la webcam..."
+echo "[VanishCam] Starting webcam..."
 exec "$VENV_PY" vanish_cam.py "$@"

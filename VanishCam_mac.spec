@@ -21,7 +21,7 @@ resources = [
 ]
 missing = [str(path) for path, _ in resources if not path.is_file()]
 if missing:
-    raise SystemExit("File necessari alla build mancanti:\n" + "\n".join(missing))
+    raise SystemExit("Build is missing required files:\n" + "\n".join(missing))
 
 a = Analysis(
     [str(root / "vanish_cam.py")],
