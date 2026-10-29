@@ -4,6 +4,8 @@ Video is processed on your computer. It is neither recorded nor sent to a server
 
 For step-by-step instructions in English and Italian, see the [user guide](USER_GUIDE_EN_IT.md).
 
+**macOS users** (Intel and Apple Silicon): see [README_MAC.md](README_MAC.md) for the native setup, launcher scripts, and `.app` build.
+
 ## ☕ Buy me a coffee
 
 If you like this project and want to support it, you can buy me a coffee through [PayPal](https://paypal.me/nicovic17) or [Revolut](https://revolut.me/nicoauriemma).
