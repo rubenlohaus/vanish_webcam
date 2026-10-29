@@ -1,5 +1,9 @@
 # VanishCam — webcam disappearance effects
 
+![Goku Instant Transmission mode demo](assets/goku-demo.gif)
+
+*Goku Instant Transmission mode — fingers to forehead, 1 second hold, and you're gone.*
+
 Video is processed on your computer. It is neither recorded nor sent to a server. The preview window and virtual camera show only the video and effects, without overlaid menus, instructions, or text.
 
 For step-by-step instructions in English and Italian, see the [user guide](USER_GUIDE_EN_IT.md).
