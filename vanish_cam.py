@@ -938,12 +938,18 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                 # Camera stream is the base: unchanged outside the person. Only the
                 # person region fades toward the captured background as silhouette_alpha drops.
                 silh_alpha = float(env["silhouette_alpha"])
-                # Harden the mask as the person vanishes so mid-confidence spots
-                # (tattoos, hair, contrasty clothing) still fully disappear at
-                # silh_alpha=0. At silh_alpha=1 the mask is untouched so aura and
-                # lines keep their soft edges.
-                hardening = 1.0 + 4.0 * (1.0 - silh_alpha)
-                hardened_mask = 1.0 - np.power(1.0 - warped_mask, hardening)
+                # Build a solid "silhouette fill" by binarizing + dilating + feathering
+                # the mask. The segmenter leaves mid-confidence (~0.3-0.5) over
+                # tattoos, patterned clothing and hair; without this the vanish leaves
+                # a ghost. Lerp from soft mask (when visible) toward solid (when gone).
+                solid_binary = (warped_mask > 0.08).astype(np.uint8)
+                dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+                solid = cv2.dilate(solid_binary, dilate_kernel, iterations=1).astype(np.float32)
+                solid = cv2.GaussianBlur(solid, (0, 0), sigmaX=2.5)
+                blend = (1.0 - silh_alpha) ** 1.5
+                hardened_mask = np.clip(
+                    warped_mask * (1.0 - blend) + solid * blend, 0.0, 1.0
+                )
                 mask3 = hardened_mask[:, :, None]
                 inside = (
                     person_frame.astype(np.float32) * silh_alpha

@@ -22,7 +22,7 @@ GOKU_DEFAULTS = dict(
     line_width=2,
     aura=True,
     warp=True,
-    auto_reappear=True,
+    auto_reappear=False,
     hold_seconds=1.0,
 )
 
