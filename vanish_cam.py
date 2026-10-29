@@ -938,7 +938,13 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                 # Camera stream is the base: unchanged outside the person. Only the
                 # person region fades toward the captured background as silhouette_alpha drops.
                 silh_alpha = float(env["silhouette_alpha"])
-                mask3 = warped_mask[:, :, None]
+                # Harden the mask as the person vanishes so mid-confidence spots
+                # (tattoos, hair, contrasty clothing) still fully disappear at
+                # silh_alpha=0. At silh_alpha=1 the mask is untouched so aura and
+                # lines keep their soft edges.
+                hardening = 1.0 + 4.0 * (1.0 - silh_alpha)
+                hardened_mask = 1.0 - np.power(1.0 - warped_mask, hardening)
+                mask3 = hardened_mask[:, :, None]
                 inside = (
                     person_frame.astype(np.float32) * silh_alpha
                     + background.astype(np.float32) * (1.0 - silh_alpha)
