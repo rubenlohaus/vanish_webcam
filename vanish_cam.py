@@ -1138,6 +1138,11 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                         goku_enter_phase(goku_state, next_phase, now, goku_cfg)
                         goku_state.holding = False
                         goku_state.hold_lost_at = float("-inf")
+                        if teleport_sound is not None:
+                            if next_phase == GokuPhase.CHARGE:
+                                teleport_sound.play_forward()
+                            else:
+                                teleport_sound.play_reverse()
                 else:
                     state.phase = "naruto_vanishing" if mode == "naruto" else "vanishing"
                     state.vanish_started = time.perf_counter()
