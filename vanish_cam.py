@@ -915,7 +915,14 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                             goku_state.holding = True
                             goku_state.hold_start = now
                         elif now - goku_state.hold_start >= goku_cfg["hold_seconds"]:
-                            goku_enter_phase(goku_state, GokuPhase.CHARGE, now, goku_cfg)
+                            # Hold from IDLE triggers the vanish, hold from GONE
+                            # triggers the reverse reappear sequence.
+                            next_phase = (
+                                GokuPhase.R_LINGER
+                                if goku_state.phase == GokuPhase.GONE
+                                else GokuPhase.CHARGE
+                            )
+                            goku_enter_phase(goku_state, next_phase, now, goku_cfg)
                     else:
                         goku_state.holding = False
                 else:
