@@ -935,8 +935,19 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                     )
                     warped_mask = goku_apply_warp_mask(mask, warp_amount, now, matrix)
 
-                alpha_field = warped_mask * float(env["silhouette_alpha"])
-                output = alpha_composite(person_frame, background, alpha_field)
+                # Camera stream is the base: unchanged outside the person. Only the
+                # person region fades toward the captured background as silhouette_alpha drops.
+                silh_alpha = float(env["silhouette_alpha"])
+                mask3 = warped_mask[:, :, None]
+                inside = (
+                    person_frame.astype(np.float32) * silh_alpha
+                    + background.astype(np.float32) * (1.0 - silh_alpha)
+                )
+                output = (
+                    camera_frame.astype(np.float32) * (1.0 - mask3)
+                    + inside * mask3
+                )
+                output = np.clip(output, 0, 255).astype(np.uint8)
 
                 if goku_cfg["aura"]:
                     aura_radius = max(width, height) * 0.42
