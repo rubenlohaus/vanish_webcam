@@ -50,6 +50,7 @@ try:
         forehead_from_face, regenerate_lines, sample_envelopes,
         warp_matrix,
     )
+    from .goku_sound import TeleportSound, SOUND_PATH as TELEPORT_SOUND_PATH
 except ImportError:
     from naruto_effect import (
         EFFECT_SECONDS, joined_hands_from_landmarks, landed_log_anchor,
@@ -66,6 +67,7 @@ except ImportError:
         forehead_from_face, regenerate_lines, sample_envelopes,
         warp_matrix,
     )
+    from goku_sound import TeleportSound, SOUND_PATH as TELEPORT_SOUND_PATH
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -778,6 +780,13 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
     vanish_sound = VanishSound() if mode == "naruto" else None
     if vanish_sound is not None:
         resources.callback(vanish_sound.close)
+    teleport_sound = None
+    if mode == "goku" and TELEPORT_SOUND_PATH.is_file():
+        try:
+            teleport_sound = TeleportSound(GOKU_DEFAULTS)
+            resources.callback(teleport_sound.close)
+        except Exception as error:
+            print(f"[Webcam] Teleport audio disabled: {error}")
     resources.callback(cv2.destroyAllWindows)
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, args.width, args.height)
@@ -874,6 +883,7 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
             elif mode == "goku":
                 dt = 0.0 if goku_last_frame_time is None else max(0.0, now - goku_last_frame_time)
                 goku_last_frame_time = now
+                prev_goku_phase = goku_state.phase
 
                 rgb = cv2.cvtColor(camera_frame, cv2.COLOR_BGR2RGB)
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
@@ -937,6 +947,11 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
                 draw_flash(output, float(env["flash"]))
 
                 goku_state.scroll += dt * goku_cfg["line_speed"] * 0.08
+                if teleport_sound is not None and goku_state.phase != prev_goku_phase:
+                    if goku_state.phase == GokuPhase.CHARGE:
+                        teleport_sound.play_forward()
+                    elif goku_state.phase == GokuPhase.R_LINGER:
+                        teleport_sound.play_reverse()
                 display = output
 
             else:
