@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import platform
 import sys
@@ -14,12 +15,31 @@ from dataclasses import dataclass, replace
 from contextlib import ExitStack
 from pathlib import Path
 
+
+@contextlib.contextmanager
+def _suppress_native_stderr():
+    """Redirect fd 2 to /dev/null while mediapipe prints its C++ init banner.
+
+    GLOG_minloglevel does not cover the ABSL_LOG calls in inference_feedback_manager
+    and friends, so swallow those lines at the file-descriptor level — the only
+    place that works for native-side writes.
+    """
+    old_fd = os.dup(2)
+    try:
+        with open(os.devnull, "w") as devnull:
+            os.dup2(devnull.fileno(), 2)
+            yield
+    finally:
+        os.dup2(old_fd, 2)
+        os.close(old_fd)
+
 # Silence native-side chatter from mediapipe, TFLite and absl/glog. These knobs
 # have to be set BEFORE mediapipe or tensorflow are imported — the C++ loggers
 # read the environment once at init and ignore later changes.
 os.environ.setdefault("GLOG_minloglevel", "2")        # 2 = ERROR; hides I/W lines
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")    # TFLite C++ log floor
 os.environ.setdefault("GRPC_VERBOSITY", "ERROR")      # mediapipe pulls grpc
+os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")  # suppress pygame banner
 
 # Silence upstream deprecation noise from protobuf (triggered by mediapipe's
 # internal use of SymbolDatabase.GetPrototype and MessageFactory). The code path
@@ -763,7 +783,8 @@ def self_test() -> int:
     load_log()
     import pygame.mixer  # The distributed build must contain its MP3 decoder.
     for mode in ("normal", "naruto", "goku"):
-        segmenter, recognizer = create_tasks(mode)
+        with _suppress_native_stderr():
+            segmenter, recognizer = create_tasks(mode)
         try:
             recognizer.close()
         finally:
@@ -788,7 +809,8 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
     capture = open_camera(args.camera, args.width, args.height)
     resources.callback(capture.release)
     capture.set(cv2.CAP_PROP_FPS, args.fps)
-    segmenter, recognizer = create_tasks(mode)
+    with _suppress_native_stderr():
+        segmenter, recognizer = create_tasks(mode)
     resources.callback(segmenter.close)
     resources.callback(recognizer.close)
     log_sprite = load_log() if mode == "naruto" else None
