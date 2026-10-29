@@ -50,6 +50,30 @@ Both scripts accept all the Python flags, e.g.:
    - **Chrome (Meet, Jitsi, Discord web)**: `chrome://settings/content/camera` → confirm OBS Virtual Camera is listed and allowed.
 4. If OBS Virtual Camera does not show at all, open OBS once and run *Tools → Start Virtual Camera* so the system registers the driver. Then stop it in OBS before launching VanishCam (only one process can drive the output).
 
+### App compatibility on macOS
+
+OBS Virtual Camera registers itself as a **DAL (Device Abstraction Layer) plug-in**, the old macOS camera API. Apps built with the hardened runtime need the `com.apple.security.cs.disable-library-validation` entitlement to load third-party DAL plug-ins. The ones below have been checked against this fork.
+
+| App | Status | Notes |
+|---|---|---|
+| **Zoom** (≥ 5.9) | Works | Enable *Allow use of plug-ins by third-party conference services* in Preferences the first time. |
+| **Microsoft Teams** desktop | Works | Pick *OBS Virtual Camera* in the camera selector. Restart Teams if it does not appear after installing OBS. |
+| **Google Meet** (Chrome / Safari / Edge) | Works | Any WebRTC browser picks the device up natively. |
+| **Discord** desktop | Works | Settings → Voice & Video → Camera. |
+| **OBS Studio** itself | Works | Add a *Video Capture Device* source. Do not route it back into its own virtual camera at the same time. |
+| **QuickTime** | Works | File → New Movie Recording → arrow next to the record button. |
+| **WhatsApp Desktop** | **Does not work** | Electron app with hardened runtime, no DAL entitlement — shows a black feed. **Use [WhatsApp Web](https://web.whatsapp.com) in a browser instead**; video calls work there. |
+| **FaceTime** | **Does not work** | Apple's own app refuses non-Apple DAL plug-ins. No workaround. |
+| **Messages** | **Does not work** | Same reason as FaceTime. |
+| **Mail** (video attachments) | **Does not work** | Hardened runtime, no entitlement. |
+| **Signal Desktop** | Flaky | Electron app, DAL load depends on the build; works on some versions. If broken, use Signal in a browser. |
+
+Rule of thumb: if the app is **Electron / hardened runtime without camera entitlement**, OBS Virtual Camera is invisible to it and you get a black feed. For those, your options are:
+
+1. **Browser version** of the service (WhatsApp Web, Signal Web). WebRTC in Chrome / Safari / Edge sees DAL devices without extra setup.
+2. **Paid alternative**: [Camo Studio](https://reincubator.com/camo) registers its virtual camera through Core Media IO instead of DAL, so the hardened-runtime apps accept it. Overkill unless you need WhatsApp Desktop specifically.
+3. **Re-signing the receiving app** to add the DAL entitlement — technically possible, breaks the vendor's signature and future updates, not recommended.
+
 ## Native build (optional)
 
 Produce a `.app` bundle you can drop in `/Applications`:
