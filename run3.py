@@ -1,6 +1,11 @@
+import os
 import time
 import warnings
 from pathlib import Path
+
+os.environ.setdefault("GLOG_minloglevel", "2")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+os.environ.setdefault("GRPC_VERBOSITY", "ERROR")
 
 warnings.filterwarnings(
     "ignore",
@@ -12,6 +17,12 @@ warnings.filterwarnings(
     message=r".*MessageFactory class is deprecated.*",
     category=UserWarning,
 )
+
+try:
+    from absl import logging as _absl_logging
+    _absl_logging.set_verbosity(_absl_logging.ERROR)
+except Exception:
+    pass
 
 import cv2
 import mediapipe as mp

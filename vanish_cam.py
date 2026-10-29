@@ -14,6 +14,13 @@ from dataclasses import dataclass, replace
 from contextlib import ExitStack
 from pathlib import Path
 
+# Silence native-side chatter from mediapipe, TFLite and absl/glog. These knobs
+# have to be set BEFORE mediapipe or tensorflow are imported — the C++ loggers
+# read the environment once at init and ignore later changes.
+os.environ.setdefault("GLOG_minloglevel", "2")        # 2 = ERROR; hides I/W lines
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")    # TFLite C++ log floor
+os.environ.setdefault("GRPC_VERBOSITY", "ERROR")      # mediapipe pulls grpc
+
 # Silence upstream deprecation noise from protobuf (triggered by mediapipe's
 # internal use of SymbolDatabase.GetPrototype and MessageFactory). The code path
 # lives in google.protobuf and mediapipe; nothing we call directly.
@@ -27,6 +34,14 @@ warnings.filterwarnings(
     message=r".*MessageFactory class is deprecated.*",
     category=UserWarning,
 )
+
+try:
+    # Python wrapper around absl: hides the "before absl::InitializeLog()" banner
+    # and anything the C++ side could not catch via GLOG_minloglevel.
+    from absl import logging as _absl_logging
+    _absl_logging.set_verbosity(_absl_logging.ERROR)
+except Exception:
+    pass
 
 import cv2
 import mediapipe as mp
