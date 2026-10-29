@@ -1,5 +1,17 @@
 import time
+import warnings
 from pathlib import Path
+
+warnings.filterwarnings(
+    "ignore",
+    message=r".*SymbolDatabase\.GetPrototype\(\) is deprecated.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*MessageFactory class is deprecated.*",
+    category=UserWarning,
+)
 
 import cv2
 import mediapipe as mp

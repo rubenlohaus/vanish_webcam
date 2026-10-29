@@ -9,9 +9,24 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import warnings
 from dataclasses import dataclass, replace
 from contextlib import ExitStack
 from pathlib import Path
+
+# Silence upstream deprecation noise from protobuf (triggered by mediapipe's
+# internal use of SymbolDatabase.GetPrototype and MessageFactory). The code path
+# lives in google.protobuf and mediapipe; nothing we call directly.
+warnings.filterwarnings(
+    "ignore",
+    message=r".*SymbolDatabase\.GetPrototype\(\) is deprecated.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*MessageFactory class is deprecated.*",
+    category=UserWarning,
+)
 
 import cv2
 import mediapipe as mp
