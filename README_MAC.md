@@ -68,6 +68,28 @@ OBS Virtual Camera registers itself as a **DAL (Device Abstraction Layer) plug-i
 | **Mail** (video attachments) | **Does not work** | Hardened runtime, no entitlement. |
 | **Signal Desktop** | Flaky | Electron app, DAL load depends on the build; works on some versions. If broken, use Signal in a browser. |
 
+### Making the Goku teleport sound audible to the other side
+
+OBS Virtual Camera only carries video. The `teleport.mp3` plays on your local
+speakers, so the person on the other end of the call hears nothing unless you
+route audio into the mic. One-time setup with [BlackHole](https://github.com/ExistentialAudio/BlackHole):
+
+```bash
+brew install blackhole-2ch
+```
+
+1. Open **Audio MIDI Setup** → **+** → *Create Aggregate Device*. Tick your real
+   mic (built-in or USB) and **BlackHole 2ch**. Name it `VanishMic`.
+2. In Zoom / Teams / Meet, pick **VanishMic** as the microphone.
+3. Launch VanishCam with the audio flag so pygame outputs *only* to BlackHole:
+
+   ```bash
+   ./START_LOCAL.sh --mode goku --audio-device "BlackHole 2ch"
+   ```
+
+   Teams always hears mic + silence; when the teleport fires, that ~3-second
+   burst mixes into the stream. No device switching, no mic drop-out.
+
 Rule of thumb: if the app is **Electron / hardened runtime without camera entitlement**, OBS Virtual Camera is invisible to it and you get a black feed. For those, your options are:
 
 1. **Browser version** of the service (WhatsApp Web, Signal Web). WebRTC in Chrome / Safari / Edge sees DAL devices without extra setup.

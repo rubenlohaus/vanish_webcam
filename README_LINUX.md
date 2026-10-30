@@ -60,6 +60,34 @@ Both scripts accept all the Python flags, e.g.:
 4. Only one process can write to `/dev/video10` at a time. Close any other app
    that is pushing to it (OBS, another VanishCam instance) before launching.
 
+### Making the Goku teleport sound audible to the other side
+
+v4l2loopback only carries video. The `teleport.mp3` plays on your local
+speakers, so the remote side hears nothing. One-time PipeWire setup to mix the
+teleport burst into a virtual mic:
+
+```bash
+# A silent sink VanishCam will play into
+pactl load-module module-null-sink sink_name=vanish_fx \
+      sink_properties=device.description=VanishFX
+
+# A virtual mic = your real mic + the monitor of vanish_fx
+pactl load-module module-remap-source master=$(pactl get-default-source) \
+      source_name=vanish_mic source_properties=device.description=VanishMic
+pactl load-module module-loopback source=vanish_fx.monitor sink=vanish_mic
+```
+
+Launch VanishCam routing audio to that sink, pass the device flag through:
+
+```bash
+PULSE_SINK=vanish_fx ./START_LOCAL.sh --mode goku --audio-device vanish_fx
+```
+
+In Zoom / Teams / Meet pick **VanishMic** as the microphone. The teleport
+sound mixes in on demand; the real mic keeps working otherwise. For
+persistence across reboots, drop the three `pactl load-module` lines into
+`~/.config/pipewire/pipewire.conf.d/vanishcam.conf` as declarative modules.
+
 ## Native build (optional)
 
 Produce a single-folder binary you can drop into `/opt` or `~/.local/bin`:

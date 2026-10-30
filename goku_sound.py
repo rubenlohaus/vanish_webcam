@@ -37,11 +37,12 @@ def _trim_to_target(samples: np.ndarray, sample_rate: int, target_s: float) -> n
 class TeleportSound:
     """Pygame-backed teleport sound with pre-aligned forward and reversed buffers."""
 
-    def __init__(self, cfg: dict, path: Path = SOUND_PATH) -> None:
+    def __init__(self, cfg: dict, path: Path = SOUND_PATH, device: str | None = None) -> None:
         if not path.is_file():
             raise RuntimeError(f"Teleport audio not found: {path}")
         self.path = path
         self.cfg = cfg
+        self.device = device or None
 
         os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
         self.ffplay = None
@@ -61,7 +62,10 @@ class TeleportSound:
         self.owns_mixer = mixer.get_init() is None
         try:
             if self.owns_mixer:
-                mixer.init(frequency=44100, size=-16, channels=2, buffer=256)
+                init_kwargs = dict(frequency=44100, size=-16, channels=2, buffer=256)
+                if self.device:
+                    init_kwargs["devicename"] = self.device
+                mixer.init(**init_kwargs)
             raw = mixer.Sound(str(path))
             samples = sndarray.array(raw)
             del raw  # we only need the samples now
@@ -118,6 +122,8 @@ class TeleportSound:
         if self.ffplay_process is not None and self.ffplay_process.poll() is None:
             self.ffplay_process.terminate()
         args = [self.ffplay, "-nodisp", "-autoexit", "-loglevel", "quiet"]
+        if self.device:
+            args += ["-audio_device", self.device]
         if direction == "reverse":
             args += ["-af", "areverse"]
         args += ["-i", str(self.path)]

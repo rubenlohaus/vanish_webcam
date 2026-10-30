@@ -180,6 +180,10 @@ def parse_args() -> argparse.Namespace:
         help="Skip the initial menu and start the chosen mode directly",
     )
     parser.add_argument(
+        "--audio-device",
+        help="Audio output device for the Goku teleport sound (e.g. 'BlackHole 2ch' on macOS). Route this into a virtual mic to make the sound audible to the other side of a Zoom/Teams/Meet call.",
+    )
+    parser.add_argument(
         "--gesture-debug", action="store_true",
         help="Print recognition status to the terminal (without writing on the video)",
     )
@@ -820,7 +824,7 @@ def run_camera(args: argparse.Namespace, resources: ExitStack, mode: str) -> int
     teleport_sound = None
     if mode == "goku" and TELEPORT_SOUND_PATH.is_file():
         try:
-            teleport_sound = TeleportSound(GOKU_DEFAULTS)
+            teleport_sound = TeleportSound(GOKU_DEFAULTS, device=getattr(args, "audio_device", None))
             resources.callback(teleport_sound.close)
         except Exception as error:
             print(f"[Webcam] Teleport audio disabled: {error}")
